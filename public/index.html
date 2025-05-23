@@ -131,6 +131,9 @@
     let fieldSize = 3000;
     let animationId = null;
 
+    // Buffer pour positions reçues du serveur pour le snake du joueur
+    let mySnakeBuffer = [];
+
     // --- Connexion
     const socket = io();
 
@@ -152,6 +155,7 @@
       pseudoModal.style.display = "none";
       restartBtn.style.display = "none";
       camera = { x: players[myId].x, y: players[myId].y };
+      mySnakeBuffer = [];
       mainLoop();
     });
 
@@ -164,6 +168,12 @@
       if (players[myId]) {
         myScore = players[myId].score || 0;
         myDead = players[myId].dead;
+        // Ajoute la position reçue dans le buffer
+        if (players[myId].snake && players[myId].snake[0]) {
+          mySnakeBuffer.push({ x: players[myId].snake[0].x, y: players[myId].snake[0].y, t: Date.now() });
+          // Garde le buffer petit
+          if (mySnakeBuffer.length > 10) mySnakeBuffer.shift();
+        }
         mySnake = players[myId].snake;
       }
       if (myDead) {
@@ -208,6 +218,7 @@
       restartBtn.style.display = "none";
       scoreDiv.innerText = "Score: 0";
       myDead = false;
+      mySnakeBuffer = [];
       mainLoop();
     };
     startBtn.onclick = joinGame;
@@ -220,10 +231,17 @@
       // Toujours envoyer la position souris, même si rien ne bouge (pour mouvement continu)
       socket.emit("move", { mouse: { x: mouse.x, y: mouse.y } });
 
-      // Caméra fluide, sans tremblement, synchronisée sur la tête réelle
-      if (mySnake && mySnake[0]) {
-        camera.x += ((mySnake[0].x || 0) - camera.x) * 0.19;
-        camera.y += ((mySnake[0].y || 0) - camera.y) * 0.19;
+      // Caméra ultra fluide : interpole entre deux positions récentes du buffer
+      if (mySnakeBuffer.length > 1) {
+        let now = Date.now();
+        let [prev, next] = [mySnakeBuffer[mySnakeBuffer.length - 2], mySnakeBuffer[mySnakeBuffer.length - 1]];
+        let dt = next.t - prev.t;
+        let k = dt ? Math.min(1, (now - next.t + 25) / dt) : 1;
+        camera.x += ((prev.x + (next.x - prev.x) * k) - camera.x) * 0.23;
+        camera.y += ((prev.y + (next.y - prev.y) * k) - camera.y) * 0.23;
+      } else if (mySnake && mySnake[0]) {
+        camera.x += ((mySnake[0].x || 0) - camera.x) * 0.16;
+        camera.y += ((mySnake[0].y || 0) - camera.y) * 0.16;
       }
 
       draw();
@@ -364,14 +382,11 @@
     // --- Mini-map
     function drawMinimap() {
       minimapCtx.clearRect(0,0,minimap.width,minimap.height);
-      // cadre
       minimapCtx.save();
       minimapCtx.strokeStyle = "#fff6";
       minimapCtx.lineWidth = 1.5;
       minimapCtx.strokeRect(0.5, 0.5, minimap.width-1, minimap.height-1);
       minimapCtx.restore();
-
-      // Serpents
       let scale = minimap.width/fieldSize;
       for (let pid in players) {
         let p = players[pid];
@@ -394,7 +409,6 @@
       let w = Math.min(window.innerWidth, 900);
       let h = Math.min(window.innerHeight, 650);
       canvas.width = w; canvas.height = h;
-      // Mini-map responsive
       if (window.innerWidth < 700) {
         minimap.width = 90; minimap.height = 90;
       } else {
@@ -404,7 +418,6 @@
     resize();
     window.addEventListener('resize', resize);
 
-    // --- Liste joueurs
     function updatePlayersList() {
       socket.emit("request_balls");
       let html = "";
