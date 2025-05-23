@@ -68,6 +68,16 @@
       color: #b2b7e7; margin-top: 18px; font-size: 1.04rem;
       text-align: left;
     }
+    #minimap {
+      position:absolute;
+      bottom:22px;
+      right:22px;
+      box-shadow:0 2px 8px #0008;
+      border-radius:11px;
+      background:#17192d;
+      border:1.5px solid #393b66;
+      z-index:30;
+    }
     canvas {
       display: block;
       background: #17192d;
@@ -78,11 +88,13 @@
     }
     @media (max-width: 960px) {
       canvas {width: 100vw !important; height: 90vh !important;}
+      #minimap {width: 90px !important; height: 90px !important;}
     }
   </style>
 </head>
 <body>
   <canvas id="game" width="900" height="650"></canvas>
+  <canvas id="minimap" width="160" height="160"></canvas>
   <div id="ui">
     <div id="score">Score: 0</div>
     <button id="restartBtn">RECOMMENCER</button>
@@ -98,12 +110,11 @@
   </div>
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // Connexion socket.io
-    const socket = io();
-
     // --- UI
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
+    const minimap = document.getElementById("minimap");
+    const minimapCtx = minimap.getContext("2d");
     const scoreDiv = document.getElementById("score");
     const restartBtn = document.getElementById("restartBtn");
     const pseudoModal = document.getElementById("pseudoModal");
@@ -119,6 +130,9 @@
     let mouse = { x: 0, y: 0 };
     let fieldSize = 3000;
     let animationId = null;
+
+    // --- Connexion
+    const socket = io();
 
     // --- Rejoindre la partie
     function joinGame() {
@@ -159,22 +173,10 @@
       }
     });
 
-    socket.on("eat_ball", ({playerId, ballId}) => {
-      // Flashs à faire en local éventuellement
-    });
-
-    socket.on("player_dead", ({id, score, reason}) => {
-      // Optionnel : message kill
-    });
-
-    socket.on("player_joined", p => {
-      players[p.id] = p;
-    });
-
-    socket.on("player_left", ({id}) => {
-      delete players[id];
-    });
-
+    socket.on("eat_ball", ({playerId, ballId}) => {});
+    socket.on("player_dead", ({id, score, reason}) => {});
+    socket.on("player_joined", p => { players[p.id] = p; });
+    socket.on("player_left", ({id}) => { delete players[id]; });
     socket.on("player_restart", p => {
       if (players[p.id]) {
         players[p.id].dead = false;
@@ -190,7 +192,6 @@
       mouse.x = camera.x + (mx - canvas.width/2);
       mouse.y = camera.y + (my - canvas.height/2);
     });
-
     canvas.addEventListener('touchmove', e => {
       if (!e.touches[0]) return;
       const rect = canvas.getBoundingClientRect();
@@ -209,8 +210,6 @@
       myDead = false;
       mainLoop();
     };
-
-    // --- Join
     startBtn.onclick = joinGame;
     pseudoInput.onkeydown = e => {if (e.key === "Enter") joinGame();};
 
@@ -218,18 +217,20 @@
     function mainLoop() {
       if (myDead) return;
       animationId = requestAnimationFrame(mainLoop);
-      // Envoi du mouvement au serveur
+      // Toujours envoyer la position souris, même si rien ne bouge (pour mouvement continu)
       socket.emit("move", { mouse: { x: mouse.x, y: mouse.y } });
 
-      // Suivi caméra
-      if (mySnake && mySnake[0])
-        camera.x += ((mySnake[0].x || 0) - camera.x) * 0.16,
-        camera.y += ((mySnake[0].y || 0) - camera.y) * 0.16;
+      // Caméra fluide, sans tremblement, synchronisée sur la tête réelle
+      if (mySnake && mySnake[0]) {
+        camera.x += ((mySnake[0].x || 0) - camera.x) * 0.19;
+        camera.y += ((mySnake[0].y || 0) - camera.y) * 0.19;
+      }
 
       draw();
+      drawMinimap();
     }
 
-    // --- Dessin du jeu
+    // --- Dessin du jeu principal
     function draw() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
@@ -325,7 +326,6 @@
             ctx.fillStyle = "#111"; ctx.globalAlpha = 0.88; ctx.fill();
           }
         }
-
         // Pseudo
         ctx.save();
         ctx.font = 'bold 14px Arial';
@@ -337,7 +337,6 @@
         ctx.fillText(p.username || '', hx, hy - 20);
         ctx.restore();
       }
-      // Score
       scoreDiv.innerText = "Score: " + (myScore || 0);
     }
 
@@ -362,18 +361,52 @@
       ctx.restore();
     }
 
-    // Canvas responsive
+    // --- Mini-map
+    function drawMinimap() {
+      minimapCtx.clearRect(0,0,minimap.width,minimap.height);
+      // cadre
+      minimapCtx.save();
+      minimapCtx.strokeStyle = "#fff6";
+      minimapCtx.lineWidth = 1.5;
+      minimapCtx.strokeRect(0.5, 0.5, minimap.width-1, minimap.height-1);
+      minimapCtx.restore();
+
+      // Serpents
+      let scale = minimap.width/fieldSize;
+      for (let pid in players) {
+        let p = players[pid];
+        if (!p.snake || p.snake.length < 1) continue;
+        let last = p.snake[0];
+        minimapCtx.save();
+        minimapCtx.beginPath();
+        minimapCtx.arc(last.x*scale, last.y*scale, pid === myId ? 7 : 4, 0, 2*Math.PI);
+        minimapCtx.fillStyle = pid === myId ? "#ffe944" : p.color;
+        minimapCtx.globalAlpha = pid === myId ? 0.96 : 0.69;
+        minimapCtx.shadowColor = p.color;
+        minimapCtx.shadowBlur = pid === myId ? 8 : 2;
+        minimapCtx.fill();
+        minimapCtx.restore();
+      }
+    }
+
+    // --- Responsive
     function resize() {
       let w = Math.min(window.innerWidth, 900);
       let h = Math.min(window.innerHeight, 650);
       canvas.width = w; canvas.height = h;
+      // Mini-map responsive
+      if (window.innerWidth < 700) {
+        minimap.width = 90; minimap.height = 90;
+      } else {
+        minimap.width = 160; minimap.height = 160;
+      }
     }
     resize();
     window.addEventListener('resize', resize);
 
-    // --- Affiche la liste des joueurs connectés
+    // --- Liste joueurs
     function updatePlayersList() {
-      socket.emit("request_balls"); // force synchro billes si lag
+      socket.emit("request_balls");
       let html = "";
       let arr = Object.values(players).filter(p=>!p.dead).sort((a,b)=>b.score-a.score);
       arr.forEach(p => {
@@ -383,7 +416,6 @@
     }
     setInterval(updatePlayersList, 1000);
 
-    // -- Raccourci touche entrée
     window.addEventListener("keydown", e => {
       if (e.key === "Enter" && pseudoModal.style.display !== "none") joinGame();
     });

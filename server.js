@@ -8,7 +8,6 @@ const io = socketio(server);
 
 const PORT = process.env.PORT || 3000;
 
-// Variables de jeu
 const FIELD_SIZE = 3000;
 const BALL_COUNT = 60;
 const BALL_RADIUS = 9;
@@ -17,11 +16,9 @@ const BALL_COLORS = [
   '#ffa252', '#ea68ff', '#39ffe1', '#c9ff57', '#ff3333'
 ];
 
-// Les états des joueurs et billes
 let players = {};
 let balls = [];
 
-// Génère une bille aléatoire
 function genBall() {
   return {
     id: Math.random().toString(36).substr(2,9),
@@ -30,8 +27,6 @@ function genBall() {
     color: BALL_COLORS[Math.floor(Math.random() * BALL_COLORS.length)],
   };
 }
-
-// Démarre les billes du jeu
 function resetBalls() {
   balls = [];
   for (let i = 0; i < BALL_COUNT; i++) balls.push(genBall());
@@ -39,9 +34,7 @@ function resetBalls() {
 resetBalls();
 
 io.on("connection", (socket) => {
-  // Connexion d'un joueur
   socket.on("join", (data) => {
-    // data: {username, color}
     players[socket.id] = {
       id: socket.id,
       username: data.username.slice(0, 16),
@@ -53,15 +46,14 @@ io.on("connection", (socket) => {
       length: 22*8,
       dead: false,
       score: 0,
+      lastDir: Math.random()*Math.PI*2 // Pour direction de départ
     };
-    // Snake initial
     for (let i = 0; i < 22; i++) {
       players[socket.id].snake.push({
-        x: players[socket.id].x - i * 12,
-        y: players[socket.id].y
+        x: players[socket.id].x - i * 12 * Math.cos(players[socket.id].lastDir),
+        y: players[socket.id].y - i * 12 * Math.sin(players[socket.id].lastDir)
       });
     }
-    // Envoie la map actuelle et la liste des joueurs à ce nouveau joueur
     socket.emit("init", { 
       id: socket.id, 
       fieldSize: FIELD_SIZE,
@@ -70,7 +62,6 @@ io.on("connection", (socket) => {
         id: p.id, username: p.username, color: p.color, x: p.x, y: p.y, snake: p.snake, score: p.score, dead: p.dead
       }))
     });
-    // Informe les autres d'un nouveau joueur
     socket.broadcast.emit("player_joined", {
       id: socket.id, 
       username: players[socket.id].username, 
@@ -83,29 +74,38 @@ io.on("connection", (socket) => {
     });
   });
 
-  // Réception des mouvements d’un joueur
   socket.on("move", data => {
     if (!players[socket.id] || players[socket.id].dead) return;
-    // data: {mouse:{x,y}}
     let p = players[socket.id];
     let head = p.snake[0];
-    let dx = data.mouse.x - head.x;
-    let dy = data.mouse.y - head.y;
-    let dist = Math.hypot(dx, dy);
-    let dir = Math.atan2(dy, dx);
+    let targetDir;
+    // Même si la souris ne bouge pas, garder la direction précédente
+    if (data && data.mouse) {
+      let dx = data.mouse.x - head.x;
+      let dy = data.mouse.y - head.y;
+      targetDir = Math.atan2(dy, dx);
+      // Si la souris ne bouge pas (pile sur la tête), garder la dernière direction
+      if (Math.abs(dx) < 2 && Math.abs(dy) < 2) {
+        targetDir = p.lastDir;
+      } else {
+        p.lastDir = targetDir;
+      }
+    } else {
+      targetDir = p.lastDir;
+    }
 
     // Vitesse dépend de la longueur
-    let speed = 4.6 - (p.length / 2600);
+    let speed = 4.7 - (p.length / 2600);
     if (speed < 2.1) speed = 2.1;
-    let moveDist = Math.min(speed, dist);
+    // Toujours bouger !
+    let nx = head.x + Math.cos(targetDir) * speed;
+    let ny = head.y + Math.sin(targetDir) * speed;
 
-    let nx = head.x + Math.cos(dir) * moveDist;
-    let ny = head.y + Math.sin(dir) * moveDist;
     p.snake.unshift({ x: nx, y: ny });
     while (p.snake.length * 8 > p.length) p.snake.pop();
     p.x = nx;
     p.y = ny;
-    p.direction = dir;
+    p.direction = targetDir;
 
     // Bords : mort
     if (
@@ -139,7 +139,6 @@ io.on("connection", (socket) => {
       if (other.dead) continue;
       for (let seg of other.snake.slice(10)) {
         if (Math.hypot(nx - seg.x, ny - seg.y) < 12) {
-          // Mort !
           p.dead = true;
           io.emit("player_dead", { id: socket.id, score: p.score, reason: "hit" });
           return;
@@ -152,18 +151,19 @@ io.on("connection", (socket) => {
     socket.emit("update_balls", balls);
   });
 
-  socket.on("restart", (data) => {
+  socket.on("restart", () => {
     if (!players[socket.id]) return;
     players[socket.id].dead = false;
     players[socket.id].score = 0;
     players[socket.id].length = 22*8;
     players[socket.id].x = FIELD_SIZE/2 + Math.random()*400 - 200;
     players[socket.id].y = FIELD_SIZE/2 + Math.random()*400 - 200;
+    players[socket.id].lastDir = Math.random()*Math.PI*2;
     players[socket.id].snake = [];
     for (let i = 0; i < 22; i++) {
       players[socket.id].snake.push({
-        x: players[socket.id].x - i * 12,
-        y: players[socket.id].y
+        x: players[socket.id].x - i * 12 * Math.cos(players[socket.id].lastDir),
+        y: players[socket.id].y - i * 12 * Math.sin(players[socket.id].lastDir)
       });
     }
     io.emit("player_restart", { id: socket.id, x: players[socket.id].x, y: players[socket.id].y, snake: players[socket.id].snake });
@@ -175,12 +175,10 @@ io.on("connection", (socket) => {
   });
 });
 
-// Envoie l’état du jeu à tous (30 fois/sec)
 setInterval(() => {
   io.emit("state", { players: players, balls: balls });
-}, 1000/30);
+}, 1000/40); // 40 FPS pour une meilleure fluidité
 
-// Sert les fichiers statiques
 app.use(express.static("public"));
 
 server.listen(PORT, () => {
