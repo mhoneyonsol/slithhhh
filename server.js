@@ -8,7 +8,7 @@ const io = socketio(server);
 
 const PORT = process.env.PORT || 3000;
 const FIELD_SIZE = 3000;
-const BALL_COUNT = 200;
+const BALL_COUNT = 3000;
 const BALL_RADIUS = 9;
 const BALL_COLORS = [
   '#ffee24', '#ff529b', '#27ffe1', '#55cbfb',
