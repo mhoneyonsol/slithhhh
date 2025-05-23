@@ -2,94 +2,23 @@
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
-  <title>Slither.io Multi</title>
+  <title>Slither.io Multi Smooth</title>
   <meta name="viewport" content="width=900">
   <style>
     html, body {margin: 0; padding: 0; background: #111; overflow: hidden;}
     body {font-family: 'Segoe UI', Arial, sans-serif;}
-    #ui {
-      position: absolute; top: 0; left: 0; width: 100%; z-index: 10;
-      pointer-events: none;
-    }
-    #score {
-      color: #fff;
-      font-size: 2rem;
-      margin: 24px 0 0 24px;
-      text-shadow: 0 0 8px #000a;
-      position: absolute;
-      left: 0; top: 0;
-      pointer-events: none;
-      user-select: none;
-    }
-    #restartBtn {
-      display: none;
-      position: absolute;
-      left: 50%; top: 46%;
-      transform: translate(-50%, -50%);
-      background: #26293a;
-      color: #fff;
-      font-size: 1.5rem;
-      padding: 22px 52px;
-      border: none;
-      border-radius: 16px;
-      box-shadow: 0 0 16px #1d212c99;
-      cursor: pointer;
-      pointer-events: auto;
-      transition: background .2s;
-      outline: none;
-    }
+    #ui {position: absolute; top: 0; left: 0; width: 100%; z-index: 10; pointer-events: none;}
+    #score {color: #fff; font-size: 2rem; margin: 24px 0 0 24px; text-shadow: 0 0 8px #000a; position: absolute; left: 0; top: 0; pointer-events: none; user-select: none;}
+    #restartBtn {display: none; position: absolute; left: 50%; top: 46%; transform: translate(-50%, -50%); background: #26293a; color: #fff; font-size: 1.5rem; padding: 22px 52px; border: none; border-radius: 16px; box-shadow: 0 0 16px #1d212c99; cursor: pointer; pointer-events: auto; transition: background .2s; outline: none;}
     #restartBtn:hover { background: #434668;}
-    #pseudoModal {
-      display: flex; flex-direction: column;
-      position: absolute; left: 50%; top: 34%;
-      transform: translate(-50%,-50%);
-      background: #232445ee;
-      border-radius: 14px;
-      box-shadow: 0 8px 24px #0009;
-      padding: 32px 42px 32px 32px;
-      align-items: center;
-      gap: 18px;
-      z-index: 100;
-    }
-    #pseudoModal input[type="text"] {
-      font-size: 1.4rem; border-radius: 9px;
-      border: 1.5px solid #383b57; padding: 8px 16px; background: #15172a; color: #fff; width: 180px;
-      outline: none; transition: border .15s;
-    }
-    #pseudoModal input[type="color"] {
-      width: 38px; height: 38px; border-radius: 50%; border: none; outline: 2px solid #353871; background: #15172a;
-    }
-    #pseudoModal button {
-      font-size: 1.25rem; padding: 7px 34px; border-radius: 10px; border: none;
-      background: #28ffe1; color: #111; font-weight: bold; cursor: pointer;
-      box-shadow: 0 2px 12px #0004;
-    }
-    #playersList {
-      color: #b2b7e7; margin-top: 18px; font-size: 1.04rem;
-      text-align: left;
-    }
-    #minimap {
-      position:absolute;
-      bottom:22px;
-      right:22px;
-      box-shadow:0 2px 8px #0008;
-      border-radius:11px;
-      background:#17192d;
-      border:1.5px solid #393b66;
-      z-index:30;
-    }
-    canvas {
-      display: block;
-      background: #17192d;
-      margin: 0 auto;
-      box-shadow: 0 4px 64px #0008;
-      border-radius: 18px;
-      border: 2px solid #22254a;
-    }
-    @media (max-width: 960px) {
-      canvas {width: 100vw !important; height: 90vh !important;}
-      #minimap {width: 90px !important; height: 90px !important;}
-    }
+    #pseudoModal {display: flex; flex-direction: column; position: absolute; left: 50%; top: 34%; transform: translate(-50%,-50%); background: #232445ee; border-radius: 14px; box-shadow: 0 8px 24px #0009; padding: 32px 42px 32px 32px; align-items: center; gap: 18px; z-index: 100;}
+    #pseudoModal input[type="text"] {font-size: 1.4rem; border-radius: 9px; border: 1.5px solid #383b57; padding: 8px 16px; background: #15172a; color: #fff; width: 180px; outline: none; transition: border .15s;}
+    #pseudoModal input[type="color"] {width: 38px; height: 38px; border-radius: 50%; border: none; outline: 2px solid #353871; background: #15172a;}
+    #pseudoModal button {font-size: 1.25rem; padding: 7px 34px; border-radius: 10px; border: none; background: #28ffe1; color: #111; font-weight: bold; cursor: pointer; box-shadow: 0 2px 12px #0004;}
+    #playersList {color: #b2b7e7; margin-top: 18px; font-size: 1.04rem; text-align: left;}
+    #minimap {position:absolute; bottom:22px; right:22px; box-shadow:0 2px 8px #0008; border-radius:11px; background:#17192d; border:1.5px solid #393b66; z-index:30;}
+    canvas {display: block; background: #17192d; margin: 0 auto; box-shadow: 0 4px 64px #0008; border-radius: 18px; border: 2px solid #22254a;}
+    @media (max-width: 960px) {canvas {width: 100vw !important; height: 90vh !important;} #minimap {width: 90px !important; height: 90px !important;}}
   </style>
 </head>
 <body>
@@ -100,7 +29,7 @@
     <button id="restartBtn">RECOMMENCER</button>
   </div>
   <div id="pseudoModal">
-    <h2 style="color:#fff;margin:0;">Slither.io Multi</h2>
+    <h2 style="color:#fff;margin:0;">Slither.io Multi Smooth</h2>
     <label style="color:#fff;">Pseudo :</label>
     <input type="text" id="pseudoInput" maxlength="16" value="Visiteur">
     <label style="color:#fff;">Couleur du serpent :</label>
@@ -110,7 +39,6 @@
   </div>
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    // --- UI
     const canvas = document.getElementById("game");
     const ctx = canvas.getContext("2d");
     const minimap = document.getElementById("minimap");
@@ -123,84 +51,62 @@
     const startBtn = document.getElementById("startBtn");
     const playersListDiv = document.getElementById("playersList");
 
-    // --- Variables de jeu
-    let myId = null, mySnake = [], myScore = 0, myDead = false, myColor = "#39ffe1", myPseudo = "";
-    let players = {}, balls = [];
-    let camera = { x: 0, y: 0 };
-    let mouse = { x: 0, y: 0 };
+    let myId = null, myScore = 0, myDead = false, myColor = "#39ffe1", myPseudo = "";
     let fieldSize = 3000;
     let animationId = null;
+    let mouse = { x: 0, y: 0 };
+    let lastMouse = { x: 0, y: 0 };
+    let camera = { x: 0, y: 0 };
+    let buffer = [];
 
-    // Buffer pour positions reçues du serveur pour le snake du joueur
-    let mySnakeBuffer = [];
-
-    // --- Connexion
     const socket = io();
 
-    // --- Rejoindre la partie
     function joinGame() {
       myColor = colorInput.value;
       myPseudo = pseudoInput.value || "Visiteur";
       socket.emit("join", { username: myPseudo, color: myColor });
     }
 
-    // --- Réception de l'état initial
+    socket.on("state", data => {
+      buffer.push(data);
+      if (buffer.length > 10) buffer.shift();
+    });
+
     socket.on("init", data => {
       myId = data.id;
-      players = {};
-      for (let p of data.players) players[p.id] = p;
-      balls = data.balls;
-      fieldSize = data.fieldSize || 3000;
       myDead = false;
+      buffer = [];
       pseudoModal.style.display = "none";
       restartBtn.style.display = "none";
-      camera = { x: players[myId].x, y: players[myId].y };
-      mySnakeBuffer = [];
+      fieldSize = data.fieldSize || 3000;
       mainLoop();
     });
 
-    // --- Mise à jour continue des états
-    socket.on("state", data => {
-      for (let pid in data.players) {
-        players[pid] = data.players[pid];
-      }
-      balls = data.balls;
-      if (players[myId]) {
-        myScore = players[myId].score || 0;
-        myDead = players[myId].dead;
-        // Ajoute la position reçue dans le buffer
-        if (players[myId].snake && players[myId].snake[0]) {
-          mySnakeBuffer.push({ x: players[myId].snake[0].x, y: players[myId].snake[0].y, t: Date.now() });
-          // Garde le buffer petit
-          if (mySnakeBuffer.length > 10) mySnakeBuffer.shift();
-        }
-        mySnake = players[myId].snake;
-      }
-      if (myDead) {
-        restartBtn.style.display = "block";
-        scoreDiv.innerHTML = `<span style="color:#ff2a53;">Perdu !</span><br>Score: ${myScore}`;
-        cancelAnimationFrame(animationId);
-      }
-    });
+    socket.on("player_dead", ({id, score, reason}) => { if(id===myId) myDead=true; });
+    socket.on("player_restart", p => { if(p.id===myId) myDead=false; });
 
-    socket.on("eat_ball", ({playerId, ballId}) => {});
-    socket.on("player_dead", ({id, score, reason}) => {});
-    socket.on("player_joined", p => { players[p.id] = p; });
-    socket.on("player_left", ({id}) => { delete players[id]; });
-    socket.on("player_restart", p => {
-      if (players[p.id]) {
-        players[p.id].dead = false;
-        players[p.id].snake = p.snake;
-      }
-    });
+    restartBtn.onclick = () => {
+      socket.emit("restart");
+      restartBtn.style.display = "none";
+      scoreDiv.innerText = "Score: 0";
+      myDead = false;
+      mainLoop();
+    };
+    startBtn.onclick = joinGame;
+    pseudoInput.onkeydown = e => {if (e.key === "Enter") joinGame();};
 
-    // --- Contrôles
+    // PATCH souris : émet uniquement quand la souris bouge (jamais dans mainLoop)
     canvas.addEventListener('mousemove', e => {
       const rect = canvas.getBoundingClientRect();
       const mx = e.clientX - rect.left;
       const my = e.clientY - rect.top;
       mouse.x = camera.x + (mx - canvas.width/2);
       mouse.y = camera.y + (my - canvas.height/2);
+      if (Math.abs(mouse.x - lastMouse.x) > 1 || Math.abs(mouse.y - lastMouse.y) > 1) {
+        socket.emit("move", { mouse: { x: mouse.x, y: mouse.y } });
+        lastMouse.x = mouse.x;
+        lastMouse.y = mouse.y;
+      }
     });
     canvas.addEventListener('touchmove', e => {
       if (!e.touches[0]) return;
@@ -209,47 +115,59 @@
       const my = e.touches[0].clientY - rect.top;
       mouse.x = camera.x + (mx - canvas.width/2);
       mouse.y = camera.y + (my - canvas.height/2);
+      if (Math.abs(mouse.x - lastMouse.x) > 1 || Math.abs(mouse.y - lastMouse.y) > 1) {
+        socket.emit("move", { mouse: { x: mouse.x, y: mouse.y } });
+        lastMouse.x = mouse.x;
+        lastMouse.y = mouse.y;
+      }
       e.preventDefault();
     }, { passive: false });
 
-    // --- Restart
-    restartBtn.onclick = () => {
-      socket.emit("restart");
-      restartBtn.style.display = "none";
-      scoreDiv.innerText = "Score: 0";
-      myDead = false;
-      mySnakeBuffer = [];
-      mainLoop();
-    };
-    startBtn.onclick = joinGame;
-    pseudoInput.onkeydown = e => {if (e.key === "Enter") joinGame();};
-
-    // --- Boucle principale
     function mainLoop() {
       if (myDead) return;
       animationId = requestAnimationFrame(mainLoop);
-      // Toujours envoyer la position souris, même si rien ne bouge (pour mouvement continu)
-      socket.emit("move", { mouse: { x: mouse.x, y: mouse.y } });
 
-      // Caméra ultra fluide : interpole entre deux positions récentes du buffer
-      if (mySnakeBuffer.length > 1) {
-        let now = Date.now();
-        let [prev, next] = [mySnakeBuffer[mySnakeBuffer.length - 2], mySnakeBuffer[mySnakeBuffer.length - 1]];
-        let dt = next.t - prev.t;
-        let k = dt ? Math.min(1, (now - next.t + 25) / dt) : 1;
-        camera.x += ((prev.x + (next.x - prev.x) * k) - camera.x) * 0.23;
-        camera.y += ((prev.y + (next.y - prev.y) * k) - camera.y) * 0.23;
-      } else if (mySnake && mySnake[0]) {
-        camera.x += ((mySnake[0].x || 0) - camera.x) * 0.16;
-        camera.y += ((mySnake[0].y || 0) - camera.y) * 0.16;
+      // NE JAMAIS envoyer la souris ici !
+
+      let renderTime = Date.now() - 90;
+      let prev = null, next = null;
+      for (let i = buffer.length-1; i >= 0; i--) {
+        if (buffer[i].now <= renderTime) { prev = buffer[i]; next = buffer[i+1]; break; }
+      }
+      if (!prev) prev = buffer[0];
+      if (!next) next = buffer[buffer.length-1];
+      let lerp = prev && next && next.now !== prev.now
+        ? (renderTime - prev.now) / (next.now - prev.now)
+        : 0;
+
+      let players = prev ? prev.players : {};
+      let balls = prev ? prev.balls : [];
+      let me = players && players[myId];
+
+      if (me && me.snake && me.snake[0]) {
+        camera.x += ((me.snake[0].x || 0) - camera.x) * 0.18;
+        camera.y += ((me.snake[0].y || 0) - camera.y) * 0.18;
       }
 
-      draw();
-      drawMinimap();
+      draw(players, balls, lerp, prev, next);
+      drawMinimap(players);
+
+      if (me) {
+        myScore = me.score || 0;
+        myDead = me.dead;
+      }
+      if (myDead) {
+        restartBtn.style.display = "block";
+        scoreDiv.innerHTML = `<span style="color:#ff2a53;">Perdu !</span><br>Score: ${myScore}`;
+        cancelAnimationFrame(animationId);
+      }
     }
 
-    // --- Dessin du jeu principal
-    function draw() {
+    function lerpPos(a, b, k) {
+      return { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k };
+    }
+
+    function draw(players, balls, lerp, prev, next) {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
       // Fond damier
@@ -267,21 +185,26 @@
       }
       ctx.restore();
 
-      // Billes
-      for (let b of balls) {
-        let bx = b.x - camera.x + canvas.width/2;
-        let by = b.y - camera.y + canvas.height/2;
-        drawBall(bx, by, 9, b.color);
+      // Billes (interpolées)
+      let nextBalls = (next && next.balls) ? next.balls : balls;
+      for (let i = 0; i < balls.length; i++) {
+        let a = balls[i], b = nextBalls[i] || a;
+        let bx = lerpPos(a, b, lerp).x - camera.x + canvas.width/2;
+        let by = lerpPos(a, b, lerp).y - camera.y + canvas.height/2;
+        drawBall(bx, by, 9, a.color);
       }
 
-      // Serpents (tous)
+      // Serpents (interpolés)
       for (let pid in players) {
         let p = players[pid];
+        let np = next && next.players[pid] ? next.players[pid] : p;
         if (!p.snake || p.snake.length < 2) continue;
         let col = p.color || "#39ffe1";
         let isMe = (pid === myId);
+
         for (let i = p.snake.length-1; i > 0; i--) {
-          let seg = p.snake[i];
+          let a = p.snake[i], b = np.snake[i] || a;
+          let seg = lerpPos(a, b, lerp);
           let px = seg.x - camera.x + canvas.width/2;
           let py = seg.y - camera.y + canvas.height/2;
           ctx.save();
@@ -295,7 +218,8 @@
           ctx.restore();
         }
         for (let i = p.snake.length-1; i > 0; i--) {
-          let seg = p.snake[i];
+          let a = p.snake[i], b = np.snake[i] || a;
+          let seg = lerpPos(a, b, lerp);
           let px = seg.x - camera.x + canvas.width/2;
           let py = seg.y - camera.y + canvas.height/2;
           ctx.save();
@@ -309,7 +233,7 @@
           ctx.restore();
         }
         // Tête
-        let h = p.snake[0];
+        let h = lerpPos(p.snake[0], np.snake[0], lerp);
         let hx = h.x - camera.x + canvas.width/2;
         let hy = h.y - camera.y + canvas.height/2;
         ctx.save();
@@ -333,7 +257,8 @@
 
         // Yeux
         if (p.snake.length > 2) {
-          let dir = Math.atan2(p.snake[0].y - p.snake[2].y, p.snake[0].x - p.snake[2].x);
+          let dA = p.snake[0], dB = np.snake[2] || p.snake[2];
+          let dir = Math.atan2(dA.y - dB.y, dA.x - dB.x);
           let eyeOff = 7, eyeRad = 4, pupilRad = 2;
           for (let side of [-1, 1]) {
             let ex = hx + Math.cos(dir + side*0.30) * eyeOff;
@@ -379,8 +304,7 @@
       ctx.restore();
     }
 
-    // --- Mini-map
-    function drawMinimap() {
+    function drawMinimap(players) {
       minimapCtx.clearRect(0,0,minimap.width,minimap.height);
       minimapCtx.save();
       minimapCtx.strokeStyle = "#fff6";
@@ -404,7 +328,6 @@
       }
     }
 
-    // --- Responsive
     function resize() {
       let w = Math.min(window.innerWidth, 900);
       let h = Math.min(window.innerHeight, 650);
@@ -419,12 +342,14 @@
     window.addEventListener('resize', resize);
 
     function updatePlayersList() {
-      socket.emit("request_balls");
       let html = "";
-      let arr = Object.values(players).filter(p=>!p.dead).sort((a,b)=>b.score-a.score);
-      arr.forEach(p => {
-        html += `<span style="color:${p.color};font-weight:bold">${p.username||''}</span> <small>(${p.score})</small><br>`;
-      });
+      if (buffer.length > 0) {
+        let state = buffer[buffer.length-1];
+        let arr = Object.values(state.players).filter(p=>!p.dead).sort((a,b)=>b.score-a.score);
+        arr.forEach(p => {
+          html += `<span style="color:${p.color};font-weight:bold">${p.username||''}</span> <small>(${p.score})</small><br>`;
+        });
+      }
       playersListDiv.innerHTML = "<b>Joueurs connectés :</b><br>" + html;
     }
     setInterval(updatePlayersList, 1000);
