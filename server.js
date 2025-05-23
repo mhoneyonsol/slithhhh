@@ -8,7 +8,7 @@ const io = socketio(server);
 
 const PORT = process.env.PORT || 3000;
 const FIELD_SIZE = 3000;
-const BALL_COUNT = 60;
+const BALL_COUNT = 200;
 const BALL_RADIUS = 9;
 const BALL_COLORS = [
   '#ffee24', '#ff529b', '#27ffe1', '#55cbfb',
@@ -24,7 +24,7 @@ function genBall() {
     x: Math.random() * (FIELD_SIZE - 80) + 40,
     y: Math.random() * (FIELD_SIZE - 80) + 40,
     color: BALL_COLORS[Math.floor(Math.random() * BALL_COLORS.length)],
-    anim: 0, // pour pop visuel
+    anim: 0,
   };
 }
 function resetBalls() {
@@ -49,15 +49,14 @@ io.on("connection", (socket) => {
       score: 0,
       lastUpdate: Date.now(),
       boosting: false,
-      boostReserve: 1,
       particles: [],
     };
     let p = players[socket.id];
     p.desiredDir = p.dir;
     for (let i = 0; i < 22; i++) {
       p.snake.push({
-        x: p.x - i * 12 * Math.cos(p.dir),
-        y: p.y - i * 12 * Math.sin(p.dir)
+        x: p.x - i * 8 * Math.cos(p.dir), // *** Distance constante ***
+        y: p.y - i * 8 * Math.sin(p.dir)
       });
     }
     socket.emit("init", { 
@@ -83,7 +82,6 @@ io.on("connection", (socket) => {
     if (!players[socket.id] || players[socket.id].dead) return;
     let p = players[socket.id];
     let head = p.snake[0];
-    // Calcule l'angle voulu seulement quand la souris bouge
     if (data && data.mouse && typeof data.mouse.x === "number" && typeof data.mouse.y === "number") {
       let dx = data.mouse.x - head.x;
       let dy = data.mouse.y - head.y;
@@ -91,7 +89,7 @@ io.on("connection", (socket) => {
       p.desiredDir = angleTarget;
     }
     if (typeof data.boost === "boolean") {
-      p.boosting = data.boost;
+      p.boosting = !!data.boost;
     }
   });
 
@@ -113,8 +111,8 @@ io.on("connection", (socket) => {
     p.boosting = false;
     for (let i = 0; i < 22; i++) {
       p.snake.push({
-        x: p.x - i * 12 * Math.cos(p.dir),
-        y: p.y - i * 12 * Math.sin(p.dir)
+        x: p.x - i * 8 * Math.cos(p.dir),
+        y: p.y - i * 8 * Math.sin(p.dir)
       });
     }
     io.emit("player_restart", { id: socket.id, snake: p.snake });
@@ -126,61 +124,69 @@ io.on("connection", (socket) => {
   });
 });
 
-// Avance TOUS les serpents à chaque tick, même sans input souris
+// Moteur de jeu
 setInterval(() => {
   for (const id in players) {
     const p = players[id];
     if (p.dead) continue;
 
-    // Boost
-    let isBoost = !!p.boosting && p.length > 22*8+24;
-    let boostSpeed = isBoost ? 2.05 : 1;
+    // Boost (pas d'espacement visuel entre les segments !)
+    let isBoost = !!p.boosting && p.length > 22*8;
+    let boostSpeed = isBoost ? 3.35 : 1;
     if (isBoost) {
-      p.length -= 1.2;
+      p.length -= 4.6;
       if (p.length < 22*8) p.length = 22*8;
-      p.boostReserve -= 0.02;
-      if (p.boostReserve < 0) p.boostReserve = 0;
-      // Traînée de particules
-      if (Math.random() < 0.85) {
+      if (Math.random() < 0.93) {
         p.particles.push({
           x: p.snake[0].x, y: p.snake[0].y,
           t: 1, col: p.color
         });
       }
-    } else {
-      p.boostReserve += 0.009;
-      if (p.boostReserve > 1) p.boostReserve = 1;
     }
+    if (p.length <= 22*8 + 1) p.boosting = false;
 
     // Inertie direction
     let dAngle = ((p.desiredDir - p.dir + Math.PI*3) % (Math.PI*2)) - Math.PI;
     p.dir += dAngle * 0.09;
 
-    // Vitesse
+    // Calcul du "mouvement" limité aux bords
     let minSpeed = 2.1, maxSpeed = 3.1;
     let baseLength = 22*8;
     let speed = (maxSpeed - (p.length - baseLength) * 0.0017) * boostSpeed;
     if (speed < minSpeed) speed = minSpeed;
 
-    // Mouvement
     let head = p.snake[0];
     let nx = head.x + Math.cos(p.dir) * speed;
     let ny = head.y + Math.sin(p.dir) * speed;
 
+    // Limite aux bords de la map
+    nx = Math.max(14, Math.min(FIELD_SIZE - 14, nx));
+    ny = Math.max(14, Math.min(FIELD_SIZE - 14, ny));
+
+    // Ajout du nouveau point en tête de serpent
     p.snake.unshift({ x: nx, y: ny });
-    while (p.snake.length * 8 > p.length) p.snake.pop();
+
+    // Gestion propre de la longueur : espacement constant, jamais plus "étiré" en boost
+    const segmentSpacing = 8;
+    let neededLength = Math.floor(p.length / segmentSpacing);
+    // Extension si besoin
+    while (p.snake.length < neededLength) {
+      let last = p.snake[p.snake.length - 1];
+      let before = p.snake[p.snake.length - 2] || last;
+      let dx = last.x - before.x, dy = last.y - before.y;
+      let dist = Math.hypot(dx, dy) || 1;
+      p.snake.push({
+        x: last.x + dx / dist * segmentSpacing,
+        y: last.y + dy / dist * segmentSpacing
+      });
+    }
+    // Réduction si trop long
+    while (p.snake.length > neededLength) p.snake.pop();
+
     p.x = nx;
     p.y = ny;
 
-    // Bords
-    if (
-      nx < 14 || nx > FIELD_SIZE - 14 ||
-      ny < 14 || ny > FIELD_SIZE - 14
-    ) {
-      p.dead = true;
-      io.emit("player_dead", { id: p.id, score: p.score, reason: "border" });
-      continue;
-    }
+    // --- On NE met plus dead sur collision bord. Le joueur reste libre ! ---
 
     // Mange une bille ?
     for (let i = 0; i < balls.length; i++) {
@@ -189,9 +195,16 @@ setInterval(() => {
       if (distToBall < BALL_RADIUS + 14 - 4) {
         p.length += 17;
         p.score += 1;
-        balls[i].anim = 1.1; // marque comme "pop"
+        balls[i].anim = 1.1;
         io.emit("eat_ball", { playerId: p.id, ballId: b.id });
-        balls[i] = {...genBall(), anim: 1.1}; // nouvelle bille, anim = pop
+
+        // Apparition hors de la vue
+        let safe = false, newBall;
+        do {
+          newBall = genBall();
+          safe = Math.abs(newBall.x - p.x) > 500 || Math.abs(newBall.y - p.y) > 350;
+        } while (!safe);
+        balls[i] = { ...newBall, anim: 1.1 };
         break;
       }
     }
@@ -220,10 +233,8 @@ setInterval(() => {
     p.lastUpdate = Date.now();
   }
 
-  // Animation des billes pop
   balls.forEach(b => { if (b.anim > 0) b.anim -= 0.13; });
 
-  // Leaderboard
   let leaderboard = Object.values(players)
     .filter(p => !p.dead)
     .sort((a, b) => b.score - a.score)
@@ -239,10 +250,9 @@ setInterval(() => {
         color: p.color,
         score: p.score,
         dead: p.dead,
-        snake: p.snake.slice(0, 42),
+        snake: p.snake.slice(0, 100),
         boosting: p.boosting,
-        boostReserve: p.boostReserve,
-        particles: p.particles.slice(0, 40)
+        particles: p.particles.slice(0, 60)
       }
     ])),
     balls: balls.map(b => ({...b})),
